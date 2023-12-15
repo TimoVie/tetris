@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 import random
 
@@ -10,7 +12,7 @@ represented in order by 0 - 6
 pygame.font.init()
 
 # GLOBALS VARS
-s_width = 800
+s_width = 880
 s_height = 700
 play_width = 300  # meaning 300 // 10 = 30 width per block
 play_height = 600  # meaning 600 // 20 = 20 height per blo ck
@@ -151,7 +153,6 @@ def create_grid(locked_positions={}):
                 grid[i][j] = c
     return grid
 
-
 def convert_shape_format(shape):
     positions = []
     format = shape.shape[shape.rotation % len(shape.shape)]
@@ -196,7 +197,7 @@ def get_shape():
 
 
 def draw_text_middle(text, size, color, surface):
-    font = pygame.font.SysFont('comicsans', size, bold=True)
+    font = pygame.font.SysFont('couriernew', size, bold=True)
     label = font.render(text, 1, color)
 
     surface.blit(label, (top_left_x + play_width/2 - (label.get_width() / 2), top_left_y + play_height/2 - label.get_height()/2))
@@ -213,12 +214,12 @@ def draw_grid(surface, row, col):
 
 def clear_rows(grid, locked):
     # need to see if row is clear the shift every other row above down one
+    rows_to_clear = []
 
-    inc = 0
-    for i in range(len(grid)-1,-1,-1):
+    for i in range(len(grid) - 1, -1, -1):
         row = grid[i]
         if (0, 0, 0) not in row:
-            inc += 1
+            rows_to_clear.append(i)
             # add positions to remove from locked
             ind = i
             for j in range(len(row)):
@@ -226,38 +227,55 @@ def clear_rows(grid, locked):
                     del locked[(j, i)]
                 except:
                     continue
-    if inc > 0:
+
+    if rows_to_clear:
         for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
             x, y = key
-            if y < ind:
-                newKey = (x, y + inc)
-                locked[newKey] = locked.pop(key)
+            if y < min(rows_to_clear):
+                new_key = (x, y + len(rows_to_clear))
+                locked[new_key] = locked.pop(key)
+
+    return len(rows_to_clear)
 
 
 def draw_next_shape(shape, surface):
-    font = pygame.font.SysFont('comicsans', 30)
-    label = font.render('Next Shape', 1, (255,255,255))
+    font = pygame.font.SysFont('couriernew', 30)
+    label = font.render('Nächstes Form:', 100 , (0,0,0))
 
-    sx = top_left_x + play_width + 50
+    sx = top_left_x + play_width + 10
     sy = top_left_y + play_height/2 - 100
     format = shape.shape[shape.rotation % len(shape.shape)]
+
 
     for i, line in enumerate(format):
         row = list(line)
         for j, column in enumerate(row):
             if column == '0':
-                pygame.draw.rect(surface, shape.color, (sx + j*30, sy + i*30, 30, 30), 0)
+                pygame.draw.rect(surface, shape.color, (sx + j*30 +50, sy + i*30, 30, 30), 0)
 
-    surface.blit(label, (sx + 10, sy- 30))
+    surface.blit(label, (sx + 15, sy - 70))
 
 
 def draw_window(surface):
-    surface.fill((0,0,0))
-    # Tetris Title
-    font = pygame.font.SysFont('comicsans', 60)
-    label = font.render('TETRIS', 1, (255,255,255))
+    surface.fill((255,255,255))
 
-    surface.blit(label, (top_left_x + play_width / 2 - (label.get_width() / 2), 30))
+    # Load the Tetris logo image
+    logo = pygame.image.load('logo_ba.png')  # Replace 'logo.png' with the actual filename of your logo image
+    logo = pygame.transform.scale(logo, (240, 80))  # Adjust the size of the logo as needed
+
+
+    # Tetris Title
+    font = pygame.font.SysFont('couriernew', 60)
+    label = font.render('TETRIS', 1, (0,0,0))
+
+    # Adjust the padding values as needed
+    padding_x = 20
+    padding_y = 10
+
+    # Blit the logo and title
+    surface.blit(logo, (top_left_x - padding_x - logo.get_width(), padding_y - 10))
+    surface.blit(label, (top_left_x + play_width / 2 - (label.get_width() / 2) - padding_x + 20,
+                         50 - padding_y))
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -265,9 +283,32 @@ def draw_window(surface):
 
     # draw grid and border
     draw_grid(surface, 20, 10)
-    pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 5)
+    pygame.draw.rect(surface, (189, 199, 192), (top_left_x, top_left_y, play_width, play_height), 5)
     # pygame.display.update()
 
+
+
+def draw_score(surface, score):
+    font = pygame.font.SysFont('couriernew', 30)
+    label = font.render('Score: ' + str(score), 1, (0,0,0))
+
+    sx = top_left_x - 220
+    sy = top_left_y + 200 - 70
+
+    surface.blit(label, (sx, sy))
+
+def draw_instruction(surface):
+    font = pygame.font.SysFont('couriernew', 15)
+    label1 = font.render('p -> pause', 1, (0,0,0))
+    label2 = font.render('q -> Spiel schließen', 1, (0,0,0))
+    label3 = font.render('n -> Neues Spiel starten', 1, (0,0,0))
+
+    sx = top_left_x - 260
+    sy = top_left_y + 500
+
+    surface.blit(label1, (sx, sy))
+    surface.blit(label2, (sx, sy + 30))
+    surface.blit(label3, (sx, sy + 60))
 
 def main():
     global grid
@@ -284,7 +325,7 @@ def main():
     level_time = 0
     fall_speed = 0.27
     score = 0
-    
+
     while run:
 
         grid = create_grid(locked_positions)
@@ -340,6 +381,12 @@ def main():
                     current_piece.y -= 1
                     print(convert_shape_format(current_piece))'''  # todo fix
 
+                if event.key == pygame.K_p:
+                    # Toggle pause state
+                    pause_menu()
+                elif event.key == pygame.K_n:
+                    main()
+
         shape_pos = convert_shape_format(current_piece)
 
         # add piece to the grid for drawing
@@ -358,11 +405,14 @@ def main():
             change_piece = False
 
             # call four times to check for multiple clear rows
-            if clear_rows(grid, locked_positions):
-                score += 10
+            rows_cleared = clear_rows(grid, locked_positions)
+            if rows_cleared > 0:
+                score += rows_cleared * 1
 
         draw_window(win)
         draw_next_shape(next_piece, win)
+        draw_score(win, score)  # Zeige den Punktestand an
+        draw_instruction(win)  # Zeige die Instruction an
         pygame.display.update()
 
         # Check if user lost
@@ -370,15 +420,25 @@ def main():
             run = False
 
     draw_text_middle("You Lost", 40, (255,255,255), win)
+    draw_score(win, score)  # Zeige den Endpunktestand an
     pygame.display.update()
     pygame.time.delay(2000)
 
 
 def main_menu():
     run = True
+
     while run:
-        win.fill((0,0,0))
-        draw_text_middle('Press any key to begin.', 60, (255, 255, 255), win)
+        win.fill((255, 255, 255))
+
+        # Load and display the Tetris logo image above the text
+        logo = pygame.image.load('logo_ba.png')  # Replace with the actual filename of your logo
+        logo = pygame.transform.scale(logo, (400, 150))  # Adjust the size of the logo as needed
+        win.blit(logo, (top_left_x + play_width / 2 - logo.get_width() / 2, 100))
+
+        draw_text_middle('Drücke eine beliebige Taste, um zu beginnen...', 25, (0, 63, 115), win)
+
+
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -388,9 +448,27 @@ def main_menu():
                 main()
     pygame.quit()
 
+def pause_menu():
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    # Resume the game
+                    return
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
+
+
+
+        win.fill((0, 0, 0))
+        draw_text_middle('Paused', 60, (255, 255, 255), win)
+        pygame.display.update()
+
 
 win = pygame.display.set_mode((s_width, s_height))
-pygame.display.set_caption('Tetris')
+pygame.display.set_caption('Tetris Game')
 
 main_menu()  # start game
 
