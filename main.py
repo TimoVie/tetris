@@ -144,10 +144,10 @@ class Piece(object):
 
 
 def create_grid(locked_positions={}):
-    grid = [[(0,0,0) for x in range(10)] for x in range(20)]
+    grid = [[(0,0,0) for _ in range(10)] for _ in range(20)]
 
-    for i in range(len(grid)):
-        for j in range(len(grid[i])):
+    for i in range(len(grid)): #jede Zeile durchgehen
+        for j in range(len(grid[i])): #jede Spalte durchgehen
             if (j,i) in locked_positions:
                 c = locked_positions[(j,i)]
                 grid[i][j] = c
@@ -200,7 +200,8 @@ def draw_text_middle(text, size, color, surface):
     font = pygame.font.SysFont('couriernew', size, bold=True)
     label = font.render(text, 1, color)
 
-    surface.blit(label, (top_left_x + play_width/2 - (label.get_width() / 2), top_left_y + play_height/2 - label.get_height()/2))
+    surface.blit(label, (s_width / 2 - label.get_width() / 2 , s_height / 2 - label.get_height() / 2))
+#    surface.blit(label, (top_left_x + play_width/2 - (label.get_width() / 2), top_left_y + play_height/2 - label.get_height()/2))
 
 
 def draw_grid(surface, row, col):
@@ -259,23 +260,12 @@ def draw_next_shape(shape, surface):
 def draw_window(surface):
     surface.fill((255,255,255))
 
-    # Load the Tetris logo image
     logo = pygame.image.load('logo_ba.png')  # Replace 'logo.png' with the actual filename of your logo image
-    logo = pygame.transform.scale(logo, (240, 80))  # Adjust the size of the logo as needed
-
-
-    # Tetris Title
-    font = pygame.font.SysFont('couriernew', 60)
-    label = font.render('TETRIS', 1, (0,0,0))
-
-    # Adjust the padding values as needed
-    padding_x = 20
-    padding_y = 10
+    logo = pygame.transform.scale(logo, (300, 60))  # Adjust the size of the logo as needed
 
     # Blit the logo and title
-    surface.blit(logo, (top_left_x - padding_x - logo.get_width(), padding_y - 10))
-    surface.blit(label, (top_left_x + play_width / 2 - (label.get_width() / 2) - padding_x + 20,
-                         50 - padding_y))
+    surface.blit(logo, (s_width / 2 - logo.get_width() / 2 - 20, 20))
+
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -333,8 +323,8 @@ def main():
         level_time += clock.get_rawtime()
         clock.tick()
 
-        if level_time/1000 > 4:
-            level_time = 0
+        if level_time/1000 > 4: #maximal 4 Sekunden Spieldauer
+            level_time = 0 #ansonsten reset
             if fall_speed > 0.15:
                 fall_speed -= 0.005
             
@@ -386,6 +376,9 @@ def main():
                     pause_menu()
                 elif event.key == pygame.K_n:
                     main()
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
 
         shape_pos = convert_shape_format(current_piece)
 
@@ -425,6 +418,7 @@ def main():
     pygame.time.delay(2000)
 
 
+
 def main_menu():
     run = True
 
@@ -456,12 +450,7 @@ def pause_menu():
                 if event.key == pygame.K_p:
                     # Resume the game
                     return
-                elif event.key == pygame.K_q:
-                    pygame.quit()
-                    sys.exit()
-
-
-
+                
         win.fill((0, 0, 0))
         draw_text_middle('Paused', 60, (255, 255, 255), win)
         pygame.display.update()
