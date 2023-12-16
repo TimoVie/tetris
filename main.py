@@ -1,5 +1,5 @@
 import sys
-
+import pickle
 import pygame
 import random
 
@@ -129,7 +129,7 @@ T = [['.....',
 shapes = [S, Z, I, O, J, L, T]
 shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
 # index 0 - 6 represent shape
-
+font = pygame.font.SysFont('couriernew', int(s_width / 20))
 
 class Piece(object):
     rows = 20  # y
@@ -279,11 +279,11 @@ def draw_window(surface):
 
 
 def draw_score(surface, score):
-    font = pygame.font.SysFont('couriernew', 30)
-    label = font.render('Score: ' + str(score), 1, (0,0,0))
+    font = pygame.font.SysFont('couriernew', int(s_width / 8))
+    label = font.render(str(score), 1, (9, 59, 128))
 
-    sx = top_left_x - 220
-    sy = top_left_y + 200 - 70
+    sx = (s_width - play_width) / 2 - label.get_width() / 2
+    sy = (s_height / 4)
 
     surface.blit(label, (sx, sy))
 
@@ -425,21 +425,23 @@ def main_menu():
     while run:
         win.fill((255, 255, 255))
 
-        # Load and display the Tetris logo image above the text
-        logo = pygame.image.load('logo_ba.jpg')  # Replace with the actual filename of your logo
-        logo = pygame.transform.scale(logo, (400, 150))  # Adjust the size of the logo as needed
-        win.blit(logo, (top_left_x + play_width / 2 - logo.get_width() / 2, 100))
+        font = pygame.font.SysFont('couriernew', 30)
+        title_text = font.render('Welcome to Tetris', True, (0, 63, 115))
+        title_rect = title_text.get_rect(center=(s_width // 2, 50))
+        win.blit(title_text, title_rect)
 
-        draw_text_middle('Drücke eine beliebige Taste, um zu beginnen...', 25, (0, 63, 115), win)
+        menu_text = font.render('Menu', True, (0, 63, 115))
+        menu_rect = menu_text.get_rect(center=(s_width // 2, 100))
+        win.blit(menu_text, menu_rect)
 
+        button("New Game", s_width // 2 - 100, s_height // 2, 200, 50, (0, 63, 115), (0, 0, 0), input_username)
+        button("Scoreboard", s_width // 2 - 100, s_height // 2 + 100, 200, 50, (0, 63, 115), (0, 0, 0), None)
 
         pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-
-            if event.type == pygame.KEYDOWN:
-                main()
     pygame.quit()
 
 def pause_menu():
@@ -455,6 +457,58 @@ def pause_menu():
         draw_text_middle('Paused', 60, (255, 255, 255), win)
         pygame.display.update()
 
+def button(text, x, y, width, height, inactive_color, active_color, action=None):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    if x < mouse[0] < x + width and y < mouse[1] < y + height:
+        pygame.draw.rect(win, active_color, (x, y, width, height))
+
+        if click[0] == 1 and action is not None:
+            action()
+    else:
+        pygame.draw.rect(win, inactive_color, (x, y, width, height))
+
+    small_text = pygame.font.SysFont('couriernew', 20)
+    text_surf, text_rect = text_objects(text, small_text)
+    text_rect.center = (x + width / 2, y + height / 2)
+    win.blit(text_surf, text_rect)
+
+def text_objects(text, font):
+    text_surface = font.render(text, True, (255, 255, 255))
+    return text_surface, text_surface.get_rect()
+ 
+def input_username():
+    run = True
+    username = ""
+
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    main()
+                elif event.key == pygame.K_BACKSPACE:
+                    username = username[:-1]
+                else:
+                    username += event.unicode
+
+        win.fill((255, 255, 255))
+
+        # Display text in the center of the window
+        prompt_text = font.render('Enter Your Username:', True, (0, 63, 115))
+        prompt_rect = prompt_text.get_rect(center=(s_width // 2, s_height // 2 - 50))
+        win.blit(prompt_text, prompt_rect)
+
+        input_text = font.render(username, True, (0, 63, 115))
+        input_rect = input_text.get_rect(center=(s_width // 2, s_height // 2))
+        win.blit(input_text, input_rect)
+
+        pygame.display.update()
+
+    return username
 
 win = pygame.display.set_mode((s_width, s_height))
 pygame.display.set_caption('Tetris Game')
