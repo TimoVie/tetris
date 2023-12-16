@@ -269,9 +269,9 @@ def draw_window(surface):
     # def button(text, x, y, width, height, inactive_color, active_color, action=None):
     left_width = s_width - play_width
 
-    button("Neustart (n)", left_width // 30, s_height - 3 * s_height // 10 - 3 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, 45)
-    button("Pause (p)", left_width // 30, s_height - 2 * s_height // 10 - 2 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, 45)
-    button("Schließen (q)", left_width // 30, s_height - s_height // 10 - left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, 45)
+    button("Neustart (n)", left_width // 30, s_height - 3 * s_height // 10 - 3 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, s_width // 30)
+    button("Pause (p)", left_width // 30, s_height - 2 * s_height // 10 - 2 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, s_width // 30)
+    button("Schließen (q)", left_width // 30, s_height - s_height // 10 - left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, s_width // 30)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
