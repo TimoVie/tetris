@@ -266,6 +266,12 @@ def draw_window(surface):
     # Blit the logo and title
     surface.blit(logo, (play_width/12, play_width/18))
 
+    # def button(text, x, y, width, height, inactive_color, active_color, action=None):
+    left_width = s_width - play_width
+
+    button("Neustart (n)", left_width // 30, s_height - 3 * s_height // 10 - 3 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, 45)
+    button("Pause (p)", left_width // 30, s_height - 2 * s_height // 10 - 2 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, 45)
+    button("Schließen (q)", left_width // 30, s_height - s_height // 10 - left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, 45)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -457,7 +463,7 @@ def pause_menu():
         draw_text_middle('Paused', 60, (255, 255, 255), win)
         pygame.display.update()
 
-def button(text, x, y, width, height, inactive_color, active_color, action=None):
+def button(text, x, y, width, height, inactive_color, active_color, action=None, fontsize = 20):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
 
@@ -469,7 +475,7 @@ def button(text, x, y, width, height, inactive_color, active_color, action=None)
     else:
         pygame.draw.rect(win, inactive_color, (x, y, width, height))
 
-    small_text = pygame.font.SysFont('couriernew', 20)
+    small_text = pygame.font.SysFont('couriernew', fontsize)
     text_surf, text_rect = text_objects(text, small_text)
     text_rect.center = (x + width / 2, y + height / 2)
     win.blit(text_surf, text_rect)
