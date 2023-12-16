@@ -3,6 +3,9 @@ import pickle
 import pygame
 import random
 
+
+from pygame import mixer
+
 """
 10 x 20 square grid
 shapes: S, Z, I, O, J, L, T
@@ -422,6 +425,10 @@ def main():
 
 def main_menu():
     run = True
+
+    mixer.init()
+    mixer.music.load('Soundtrack.mp3')
+    mixer.music.play()
 
     while run:
         win.fill((255, 255, 255))
