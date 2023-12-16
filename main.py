@@ -5,6 +5,7 @@ import random
 
 from pygame import mixer
 
+
 """
 10 x 20 square grid
 shapes: S, Z, I, O, J, L, T
@@ -15,6 +16,7 @@ Test
 pygame.font.init()
 
 # GLOBALS VARS
+VOLUME = 0.01
 s_width = 1000
 s_height = s_width
 play_width = s_width / 2  # meaning 300 // 10 = 30 width per block
@@ -244,20 +246,38 @@ def clear_rows(grid, locked):
 
 def draw_next_shape(shape, surface):
     font = pygame.font.SysFont('couriernew', 30)
-    label = font.render('Nächstes Form:', 100 , (0,0,0))
+    label = font.render('Nächste Form:', 100 , (0,0,0))
 
-    sx = top_left_x + play_width + 10
-    sy = top_left_y + play_height/2 - 100
     format = shape.shape[shape.rotation % len(shape.shape)]
 
+    first_idx = 2
+    last_idx = 2
+    for i, line in enumerate(format):
+        foundOne = False
+        for j, column in enumerate(line):
+            if column == '0':
+                if first_idx > j:
+                    first_idx = j
+                if last_idx < j:
+                    last_idx = j
+
+                
+    max_length = last_idx - first_idx + 1
+            
+    print(max_length)
+    sx = (s_width - play_width) // 2 - 2.5 * block_size
+    if max_length == 2:
+        sx += block_size / 2
+    print(sx)
+    sy = s_height * 2 // 5
 
     for i, line in enumerate(format):
         row = list(line)
         for j, column in enumerate(row):
             if column == '0':
-                pygame.draw.rect(surface, shape.color, (sx + j*block_size +50, sy + i*block_size, block_size, block_size), 0)
+                pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
 
-    surface.blit(label, (sx + 15, sy - 70))
+    #surface.blit(label, (sx + 15, sy))
 
 
 def draw_window(surface):
@@ -272,9 +292,9 @@ def draw_window(surface):
     # def button(text, x, y, width, height, inactive_color, active_color, action=None):
     left_width = s_width - play_width
 
-    button("Neustart (n)", left_width // 30, s_height - 3 * s_height // 10 - 3 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, s_width // 30)
-    button("Pause (p)", left_width // 30, s_height - 2 * s_height // 10 - 2 * left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, s_width // 30)
-    button("Schließen (q)", left_width // 30, s_height - s_height // 10 - left_width // 30, s_width - play_width - left_width // 15, s_height // 10, (0, 63, 115), (0, 0, 0), input_username, s_width // 30)
+    button("Neustart (n)", left_width // 30, s_height - 3 * s_height // 15 - 3 * left_width // 30, s_width - play_width - left_width // 15, s_height // 15, (0, 63, 115), (0, 0, 0), simulate_restart, s_width // 35)
+    button("Pause (p)", left_width // 30, s_height - 2 * s_height // 15 - 2 * left_width // 30, s_width - play_width - left_width // 15, s_height // 15, (0, 63, 115), (0, 0, 0), simulate_pause, s_width // 35)
+    button("Schließen (q)", left_width // 30, s_height - s_height // 15 - left_width // 30, s_width - play_width - left_width // 15, s_height // 15, (0, 63, 115), (0, 0, 0), simulate_quit, s_width // 35)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -288,12 +308,13 @@ def draw_window(surface):
 
 
 def draw_score(surface, score):
-    font = pygame.font.SysFont('couriernew', int(s_width / 8))
-    label = font.render(str(score), 1, (9, 59, 128))
+    font = pygame.font.SysFont('couriernew', int(s_width / 10))
+    label = font.render(str(score), 1, (255, 255, 255))
 
     sx = (s_width - play_width) / 2 - label.get_width() / 2
-    sy = (s_height / 4)
+    sy = (s_height / 4) - label.get_height() // 2
 
+    pygame.draw.circle(surface, (9, 59, 128), ((s_width - play_width) // 2, s_height / 4), s_width / 10)
     surface.blit(label, (sx, sy))
 
 def draw_instruction(surface):
@@ -310,7 +331,7 @@ def draw_instruction(surface):
     surface.blit(label3, (sx, sy + 60))
 
 def main():
-    global grid
+    global grid, VOLUME
 
     locked_positions = {}  # (x,y):(255,0,0)
     grid = create_grid(locked_positions)
@@ -382,12 +403,14 @@ def main():
 
                 if event.key == pygame.K_p:
                     # Toggle pause state
-                    pause_menu()
+                    mixer.music.set_volume(0)
+                    pause_menu(win)
+                    mixer.music.set_volume(VOLUME)
+                    #mixer.music.play
                 elif event.key == pygame.K_n:
-                    main()
+                    main_menu()
                 elif event.key == pygame.K_q:
-                    pygame.quit()
-                    sys.exit()
+                    quit()
 
         shape_pos = convert_shape_format(current_piece)
 
@@ -414,7 +437,7 @@ def main():
         draw_window(win)
         draw_next_shape(next_piece, win)
         draw_score(win, score)  # Zeige den Punktestand an
-        draw_instruction(win)  # Zeige die Instruction an
+        # draw_instruction(win)  # Zeige die Instruction an
         pygame.display.update()
 
         # Check if user lost
@@ -426,29 +449,27 @@ def main():
     pygame.display.update()
     pygame.time.delay(2000)
 
-
+def quit():
+    pygame.quit()
+    sys.exit()
 
 def main_menu():
     run = True
-
-    mixer.init()
-    mixer.music.load('Soundtrack.mp3')
-    mixer.music.play()
 
     while run:
         win.fill((255, 255, 255))
 
         font = pygame.font.SysFont('couriernew', 30)
-        title_text = font.render('Welcome to Tetris', True, (0, 63, 115))
+        title_text = font.render('Willkommen bei Tetris', True, (0, 63, 115))
         title_rect = title_text.get_rect(center=(s_width // 2, 50))
         win.blit(title_text, title_rect)
 
-        menu_text = font.render('Menu', True, (0, 63, 115))
+        menu_text = font.render('Menü', True, (0, 63, 115))
         menu_rect = menu_text.get_rect(center=(s_width // 2, 100))
         win.blit(menu_text, menu_rect)
 
-        button("New Game", s_width // 2 - 100, s_height // 2, 200, 50, (0, 63, 115), (0, 0, 0), input_username)
-        button("Scoreboard", s_width // 2 - 100, s_height // 2 + 100, 200, 50, (0, 63, 115), (0, 0, 0), None)
+        button("Neues Spiel", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), input_username, 30)
+        button("Scoreboard", s_width // 3, s_height // 2 + 100, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), None, 30)
 
         pygame.display.update()
 
@@ -457,7 +478,7 @@ def main_menu():
                 run = False
     pygame.quit()
 
-def pause_menu():
+def pause_menu(surface):
     paused = True
     while paused:
         for event in pygame.event.get():
@@ -465,10 +486,25 @@ def pause_menu():
                 if event.key == pygame.K_p:
                     # Resume the game
                     return
-                
-        win.fill((0, 0, 0))
-        draw_text_middle('Paused', 60, (255, 255, 255), win)
+        
+        pygame.draw.rect(surface, (30, 30, 30), (s_width - play_width + play_width / 240, s_height - play_height + play_width / 240, play_width - 2 * play_width / 240, play_height - 2 * play_width / 240), 0)
+        
+        #draw_text_middle('Paused', 60, (255, 255, 255), win)
+        button("Fortsetzen", s_width - play_width // 2 - play_width // 4, s_height // 2 - play_height // 40, play_width // 2, play_height // 20, (0, 63, 115), (26, 99, 201), simulate_pause, int(play_width // 20))
         pygame.display.update()
+
+
+def simulate_pause():
+    newevent = pygame.event.Event(pygame.KEYDOWN, unicode="p", key=pygame.K_p, mod=pygame.KMOD_NONE) #create the event
+    pygame.event.post(newevent)
+
+def simulate_quit():
+    newevent = pygame.event.Event(pygame.KEYDOWN, unicode="q", key=pygame.K_q, mod=pygame.KMOD_NONE) #create the event
+    pygame.event.post(newevent)
+
+def simulate_restart():
+    newevent = pygame.event.Event(pygame.KEYDOWN, unicode="n", key=pygame.K_n, mod=pygame.KMOD_NONE) #create the event
+    pygame.event.post(newevent)
 
 def button(text, x, y, width, height, inactive_color, active_color, action=None, fontsize = 20):
     mouse = pygame.mouse.get_pos()
@@ -511,7 +547,8 @@ def input_username():
         win.fill((255, 255, 255))
 
         # Display text in the center of the window
-        prompt_text = font.render('Enter Your Username:', True, (0, 63, 115))
+        label = pygame.font.SysFont('couriernew', int(s_width / 20), bold=True)
+        prompt_text = label.render('Enter Your Username:', True, (0, 63, 115))
         prompt_rect = prompt_text.get_rect(center=(s_width // 2, s_height // 2 - 50))
         win.blit(prompt_text, prompt_rect)
 
@@ -523,6 +560,11 @@ def input_username():
 
     return username
 
+
+mixer.init()
+mixer.music.load('Soundtrack.mp3')
+mixer.music.set_volume(VOLUME)
+mixer.music.play(100)
 win = pygame.display.set_mode((s_width, s_height))
 pygame.display.set_caption('Tetris Game')
 
