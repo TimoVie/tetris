@@ -12,13 +12,13 @@ represented in order by 0 - 6
 pygame.font.init()
 
 # GLOBALS VARS
-s_width = 880
-s_height = 700
-play_width = 300  # meaning 300 // 10 = 30 width per block
-play_height = 600  # meaning 600 // 20 = 20 height per blo ck
-block_size = 30
+s_width = 1000
+s_height = s_width
+play_width = s_width / 2  # meaning 300 // 10 = 30 width per block
+play_height = s_width  # meaning 600 // 20 = 20 height per blo ck
+block_size = play_height / 20
 
-top_left_x = (s_width - play_width) // 2
+top_left_x = (s_width - play_width)
 top_left_y = s_height - play_height
 
 
@@ -144,7 +144,7 @@ class Piece(object):
 
 
 def create_grid(locked_positions={}):
-    grid = [[(0,0,0) for _ in range(10)] for _ in range(20)]
+    grid = [[(30,30,30) for _ in range(10)] for _ in range(20)]
 
     for i in range(len(grid)): #jede Zeile durchgehen
         for j in range(len(grid[i])): #jede Spalte durchgehen
@@ -170,7 +170,7 @@ def convert_shape_format(shape):
 
 
 def valid_space(shape, grid):
-    accepted_positions = [[(j, i) for j in range(10) if grid[i][j] == (0,0,0)] for i in range(20)]
+    accepted_positions = [[(j, i) for j in range(10) if grid[i][j] == (30,30,30)] for i in range(20)]
     accepted_positions = [j for sub in accepted_positions for j in sub]
     formatted = convert_shape_format(shape)
 
@@ -208,9 +208,9 @@ def draw_grid(surface, row, col):
     sx = top_left_x
     sy = top_left_y
     for i in range(row):
-        pygame.draw.line(surface, (128,128,128), (sx, sy+ i*30), (sx + play_width, sy + i * 30))  # horizontal lines
+        pygame.draw.line(surface, (128,128,128), (sx, sy+ i*block_size), (sx + play_width, sy + i * block_size))  # horizontal lines
         for j in range(col):
-            pygame.draw.line(surface, (128,128,128), (sx + j * 30, sy), (sx + j * 30, sy + play_height))  # vertical lines
+            pygame.draw.line(surface, (128,128,128), (sx + j * block_size, sy), (sx + j * block_size, sy + play_height))  # vertical lines
 
 
 def clear_rows(grid, locked):
@@ -219,7 +219,7 @@ def clear_rows(grid, locked):
 
     for i in range(len(grid) - 1, -1, -1):
         row = grid[i]
-        if (0, 0, 0) not in row:
+        if (30, 30, 30) not in row:
             rows_to_clear.append(i)
             # add positions to remove from locked
             ind = i
@@ -252,7 +252,7 @@ def draw_next_shape(shape, surface):
         row = list(line)
         for j, column in enumerate(row):
             if column == '0':
-                pygame.draw.rect(surface, shape.color, (sx + j*30 +50, sy + i*30, 30, 30), 0)
+                pygame.draw.rect(surface, shape.color, (sx + j*block_size +50, sy + i*block_size, block_size, block_size), 0)
 
     surface.blit(label, (sx + 15, sy - 70))
 
@@ -260,20 +260,20 @@ def draw_next_shape(shape, surface):
 def draw_window(surface):
     surface.fill((255,255,255))
 
-    logo = pygame.image.load('logo_ba.png')  # Replace 'logo.png' with the actual filename of your logo image
-    logo = pygame.transform.scale(logo, (300, 60))  # Adjust the size of the logo as needed
+    logo = pygame.image.load('logo_ba.jpg')  # Replace 'logo.jpg' with the actual filename of your logo image
+    logo = pygame.transform.scale(logo, (s_width - play_width - play_width/6, (s_width - play_width - play_width/6)/5))  # Adjust the size of the logo as needed
 
     # Blit the logo and title
-    surface.blit(logo, (s_width / 2 - logo.get_width() / 2 - 20, 20))
+    surface.blit(logo, (play_width/12, play_width/18))
 
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            pygame.draw.rect(surface, grid[i][j], (top_left_x + j* 30, top_left_y + i * 30, 30, 30), 0)
+            pygame.draw.rect(surface, grid[i][j], (top_left_x + j* block_size, top_left_y + i * block_size, block_size, block_size), 0)
 
     # draw grid and border
     draw_grid(surface, 20, 10)
-    pygame.draw.rect(surface, (189, 199, 192), (top_left_x, top_left_y, play_width, play_height), 5)
+    pygame.draw.rect(surface, (189, 199, 192), (top_left_x, top_left_y, play_width, play_height), int(play_width / 120))
     # pygame.display.update()
 
 
@@ -426,7 +426,7 @@ def main_menu():
         win.fill((255, 255, 255))
 
         # Load and display the Tetris logo image above the text
-        logo = pygame.image.load('logo_ba.png')  # Replace with the actual filename of your logo
+        logo = pygame.image.load('logo_ba.jpg')  # Replace with the actual filename of your logo
         logo = pygame.transform.scale(logo, (400, 150))  # Adjust the size of the logo as needed
         win.blit(logo, (top_left_x + play_width / 2 - logo.get_width() / 2, 100))
 
