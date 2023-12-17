@@ -2,12 +2,13 @@ import sys
 import pickle
 import pygame
 import random
+import time
 from pygame import mixer
 
 pygame.font.init() #initialisiert das Schriftmodul in pygame
 
 # Globale Variablen
-lautstärke = 0
+lautstärke = 0.01
 screen_breite = 600
 screen_höhe = screen_breite
 spiel_breite = screen_breite / 2
@@ -82,7 +83,7 @@ T = [
 
 tetrominos = [O, I, S, Z, L, J, T]
 tetromino_farben = [(0, 110, 176), (255, 125, 0), (255, 201, 0), (48, 3, 156), (128, 207, 255), (255, 190, 128), (167, 130, 255)] #Definition der Farben der Tetrominos
-schrift = pygame.font.Font('Montserrat-VariableFont_wght.ttf', int(screen_breite / 20)) #Definition der Schriftart und -größe
+schrift = pygame.font.Font('Roboto-Medium.ttf', int(screen_breite / 20)) #Definition der Schriftart und -größe
 
 class Stück(object):
     def __init__(self, spalte, reihe, tetromino):
@@ -221,7 +222,7 @@ def spielfenster_erzeugen(oberfläche): #Zeichnet das Fenster des Spiels
     pygame.draw.rect(oberfläche, (189, 199, 192), (oben_links_x, oben_links_y, spiel_breite, spiel_höhe), int(spiel_breite / 120))
 
 def score_zeichnen(oberfläche, score): #Zeichnet den aktuellen Score (Spielstand)
-    schrift = pygame.font.Font('Montserrat-VariableFont_wght.ttf', int(screen_breite / 20))
+    schrift = pygame.font.Font('Roboto-Medium.ttf', int(screen_breite / 9))
     punktzahl_label = schrift.render(str(score), 1, (255, 255, 255))
 
     x_punktzahl = (screen_breite - spiel_breite) / 2 - punktzahl_label.get_width() / 2
@@ -323,7 +324,7 @@ def main():
         if überprüfe_verloren(gesperrte_positionen):
             run = False
 
-    schrift = pygame.font.Font('Montserrat-VariableFont_wght.ttf', int(screen_breite / 20))
+    schrift = pygame.font.Font('Roboto-Medium.ttf', int(screen_breite / 20))
     text_verloren = schrift.render('Verloren!', True, (255, 255, 255))
     rect_verloren = text_verloren.get_rect(center=(screen_breite - spiel_breite // 2, screen_höhe // 2))
     win.blit(text_verloren, rect_verloren)
@@ -350,8 +351,9 @@ def quit():
 def hauptmenü():
     global benutzer
     run = True
-    überschrift = pygame.font.Font('Montserrat-VariableFont_wght.ttf', int(screen_breite / 10))
-    schrift = pygame.font.Font('Montserrat-VariableFont_wght.ttf', int(screen_breite / 20))
+    überschrift = pygame.font.Font('Roboto-Bold.ttf', int(screen_breite / 10))
+    schrift = pygame.font.Font('Roboto-Medium.ttf', int(screen_breite / 20))
+    schrift_dünn = pygame.font.Font('Roboto-Light.ttf', int(screen_breite / 20))
     K_Return = pygame.event.Event(pygame.KEYDOWN, unicode="m", key=pygame.K_RETURN, mod=pygame.KMOD_NONE)
     benutzername = benutzer
 
@@ -359,7 +361,7 @@ def hauptmenü():
     #while run:
     win.fill((255, 255, 255))
     menü_text = überschrift.render('Tetris', True, (0, 63, 115))
-    menü_rect = menü_text.get_rect(center=(screen_breite // 2, 100))
+    menü_rect = menü_text.get_rect(center=(screen_breite // 2, screen_höhe // 8))
 
 
     while run:
@@ -371,39 +373,38 @@ def hauptmenü():
         # Scoreboards
         top_scores = lade_top_scores()
         titel_text = schrift.render('Top 3 Scores', True, (0, 63, 115))
-        titel_rect = titel_text.get_rect(center=(screen_breite // 2, 200))
+        titel_rect = titel_text.get_rect(center=(screen_breite // 2, screen_höhe // 4))
         win.blit(titel_text, titel_rect)
 
-        for i, (benutzername, score) in enumerate(top_scores):
-            score_text = schrift.render(f"{i + 1}. {benutzername} : {score}", True, (0, 63, 115))
-            score_rect = score_text.get_rect(center=(screen_breite // 2, 250 + i * 50))
+        for i, (name, score) in enumerate(top_scores):
+            score_text = schrift_dünn.render(f"{i + 1}. {name} : {score}", True, (0, 63, 115))
+            score_rect = score_text.get_rect(center=(screen_breite // 2, screen_höhe // 4 + (i + 1) * screen_höhe // 15))
             win.blit(score_text, score_rect)
 
         prompt_text = schrift.render('Gib deinen Benutzernamen ein:', True, (0, 63, 115))
         prompt_rect = prompt_text.get_rect(center=(screen_breite // 2, screen_höhe * 11 // 16))
         win.blit(prompt_text, prompt_rect)
 
-        print(benutzername)
-        eingabe_text = schrift.render(benutzername, True, (0, 63, 115))
+        eingabe_text = schrift_dünn.render(benutzername, True, (0, 63, 115))
         eingabe_rect = eingabe_text.get_rect(center=(screen_breite // 2, screen_höhe * 6 // 8))
         win.blit(eingabe_text, eingabe_rect)
 
-        benutzer = benutzername
+        
 
         pygame.display.update() #Aktualisiert das Fenster
-
-        event = pygame.event.wait()
-        if event.type == pygame.QUIT:
-            pygame.quit() #Beendet alle PyGame-Module
-            sys.exit() #Beendet das Python-Skript
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_BACKSPACE:
-             benutzername = benutzername[:-1]
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-             run = False
-        elif event.type == pygame.KEYDOWN:
-            benutzername += event.unicode
-        elif event.type == MENÜ_eventtype:
-            run = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit() #Beendet alle PyGame-Module
+                sys.exit() #Beendet das Python-Skript
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_BACKSPACE:
+                benutzername = benutzername[:-1]
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                run = False
+                benutzer = benutzername
+            elif event.type == pygame.KEYDOWN:
+                benutzername += event.unicode
+            elif event.type == MENÜ_eventtype:
+                run = False
 
 
 def pausenmenü(oberfläche):
@@ -421,7 +422,6 @@ def pausenmenü(oberfläche):
             sys.exit() #Beendet das Python-Skript
         elif event.type == PAUSE_eventtype:
             pausiert = False
-            print("Pause verlassen")
 
 
 def button(text, x, y, breite, höhe, inactive_farbe, active_farbe, aktion=None, schriftgröße = 20):
@@ -435,7 +435,7 @@ def button(text, x, y, breite, höhe, inactive_farbe, active_farbe, aktion=None,
     else:
         pygame.draw.rect(win, inactive_farbe, (x, y, breite, höhe))
 
-    schrift = pygame.font.Font('Montserrat-VariableFont_wght.ttf', int(screen_breite / 20))
+    schrift = pygame.font.Font('Roboto-Medium.ttf', int(screen_breite / 24))
     text_oberfläche, text_rect = text_objekte(text, schrift)
     text_rect.center = (x + breite / 2, y + höhe / 2)
     win.blit(text_oberfläche, text_rect)
@@ -475,7 +475,7 @@ win = pygame.display.set_mode((screen_breite, screen_höhe))
 pygame.display.set_caption('Tetris Game')
 
 global benutzer
-benutzer = ""
+benutzer = "anonym"
 
 main()
 
