@@ -194,9 +194,14 @@ def reihen_leeren(grid, locked):
     if zu_leerende_reihen:
         for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
             x, y = key
-            if y < min(zu_leerende_reihen):
-                new_key = (x, y + len(zu_leerende_reihen))
-                locked[new_key] = locked.pop(key)
+            zeilen_unterhalb = 0
+            for reihe in zu_leerende_reihen:
+                if reihe > y:
+                    zeilen_unterhalb += 1
+
+            # if y < min(zu_leerende_reihen):
+            new_key = (x, y + zeilen_unterhalb)
+            locked[new_key] = locked.pop(key)
 
     return len(zu_leerende_reihen)
 
@@ -298,7 +303,6 @@ def main():
     nächstes_tetromino = get_shape(aktuelles_tetromino)
     clock = pygame.time.Clock()
     Fallzeit = 0
-    Levelzeit = 0
     Fallgeschwindigkeit = 0.27
     score = 0
 
@@ -306,13 +310,7 @@ def main():
 
         grid = erstelle_grid(gesperrte_positionen)
         Fallzeit += clock.get_rawtime()
-        Levelzeit += clock.get_rawtime()
         clock.tick()
-
-        if Levelzeit/1000 > 4: #maximal 4 Sekunden Spieldauer
-            Levelzeit = 0 #ansonsten reset
-            if Fallgeschwindigkeit > 0.15:
-                Fallgeschwindigkeit -= 0.005
 
 
         # PIECE FALLING CODE
