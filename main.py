@@ -29,123 +29,75 @@ top_left_y = s_height - play_height
 
 # SHAPE FORMATS
 
-S = [['.....',
-      '.....',
-      '..00.',
-      '.00..',
-      '.....'],
-     ['.....',
-      '..0..',
-      '..00.',
-      '...0.',
-      '.....']]
+O = [
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-'],
+  ['-', 'X', 'X', '-', '-'],
+  ['-', 'X', 'X', '-', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-Z = [['.....',
-      '.....',
-      '.00..',
-      '..00.',
-      '.....'],
-     ['.....',
-      '..0..',
-      '.00..',
-      '.0...',
-      '.....']]
+I = [
+  ['-', '-', 'X', '-', '-'],
+  ['-', '-', 'X', '-', '-'],
+  ['-', '-', 'X', '-', '-'],
+  ['-', '-', 'X', '-', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-I = [['..0..',
-      '..0..',
-      '..0..',
-      '..0..',
-      '.....'],
-     ['.....',
-      '0000.',
-      '.....',
-      '.....',
-      '.....']]
+S = [
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', 'X', 'X', '-'],
+  ['-', 'X', 'X', '-', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-O = [['.....',
-      '.....',
-      '.00..',
-      '.00..',
-      '.....']]
+Z = [
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-'],
+  ['-', 'X', 'X', '-', '-'],
+  ['-', '-', 'X', 'X', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-J = [['.....',
-      '.0...',
-      '.000.',
-      '.....',
-      '.....'],
-     ['.....',
-      '..00.',
-      '..0..',
-      '..0..',
-      '.....'],
-     ['.....',
-      '.....',
-      '.000.',
-      '...0.',
-      '.....'],
-     ['.....',
-      '..0..',
-      '..0..',
-      '.00..',
-      '.....']]
+L = [
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', 'X', '-'],
+  ['-', 'X', 'X', 'X', '-'],
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-L = [['.....',
-      '...0.',
-      '.000.',
-      '.....',
-      '.....'],
-     ['.....',
-      '..0..',
-      '..0..',
-      '..00.',
-      '.....'],
-     ['.....',
-      '.....',
-      '.000.',
-      '.0...',
-      '.....'],
-     ['.....',
-      '.00..',
-      '..0..',
-      '..0..',
-      '.....']]
+J = [
+  ['-', '-', '-', '-', '-'],
+  ['-', 'X', '-', '-', '-'],
+  ['-', 'X', 'X', 'X', '-'],
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-T = [['.....',
-      '..0..',
-      '.000.',
-      '.....',
-      '.....'],
-     ['.....',
-      '..0..',
-      '..00.',
-      '..0..',
-      '.....'],
-     ['.....',
-      '.....',
-      '.000.',
-      '..0..',
-      '.....'],
-     ['.....',
-      '..0..',
-      '.00..',
-      '..0..',
-      '.....']]
+T = [
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', 'X', '-', '-'],
+  ['-', 'X', 'X', 'X', '-'],
+  ['-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-']
+]
 
-shapes = [S, Z, I, O, J, L, T]
-shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
+shapes = [O, I, S, Z, L, J, T]
+shape_colors = [(0, 110, 176), (255, 125, 0), (255, 201, 0), (48, 3, 156), (128, 207, 255), (255, 190, 128), (167, 130, 255)]
 # index 0 - 6 represent shape
 font = pygame.font.SysFont('couriernew', int(s_width / 20))
 
 class Piece(object):
-    rows = 20  # y
-    columns = 10  # x
 
     def __init__(self, column, row, shape):
-        self.x = column
-        self.y = row
         self.shape = shape
         self.color = shape_colors[shapes.index(shape)]
         self.rotation = 0  # number from 0-3
+        self.x = column
+        self.y = row
 
 
 def create_grid(locked_positions={}):
@@ -160,12 +112,15 @@ def create_grid(locked_positions={}):
 
 def convert_shape_format(shape):
     positions = []
-    format = shape.shape[shape.rotation % len(shape.shape)]
+    internal_positions = shape.shape
 
-    for i, line in enumerate(format):
-        row = list(line)
+    if shape.shape != O:
+        for i in range(shape.rotation):
+            internal_positions = list(zip(*internal_positions))[::-1]
+
+    for i, row in enumerate(internal_positions):
         for j, column in enumerate(row):
-            if column == '0':
+            if column == 'X':
                 positions.append((shape.x + j, shape.y + i))
 
     for i, pos in enumerate(positions):
@@ -195,10 +150,14 @@ def check_lost(positions):
     return False
 
 
-def get_shape():
+def get_shape(current = None):
     global shapes, shape_colors
+    new_piece = Piece(5, 0, random.choice(shapes))
+    if current is not None:
+        while current.shape == new_piece.shape:
+            new_piece = Piece(5, 0, random.choice(shapes))
 
-    return Piece(5, 0, random.choice(shapes))
+    return new_piece
 
 
 def draw_text_middle(text, size, color, surface):
@@ -246,16 +205,17 @@ def clear_rows(grid, locked):
 
 def draw_next_shape(shape, surface):
     font = pygame.font.SysFont('couriernew', 30)
-    label = font.render('Nächste Form:', 100 , (0,0,0))
+    #label = font.render('Nächste Form:', 100 , (0,0,0))
 
-    format = shape.shape[shape.rotation % len(shape.shape)]
+    #form = shape.shape
+    #rotated = list(zip(*shape.shape))[::-1]
+    #format = shape.shape[shape.rotation % len(shape.shape)]
 
     first_idx = 2
     last_idx = 2
-    for i, line in enumerate(format):
-        foundOne = False
+    for i, line in enumerate(shape.shape):
         for j, column in enumerate(line):
-            if column == '0':
+            if column == 'X':
                 if first_idx > j:
                     first_idx = j
                 if last_idx < j:
@@ -264,17 +224,15 @@ def draw_next_shape(shape, surface):
                 
     max_length = last_idx - first_idx + 1
             
-    print(max_length)
     sx = (s_width - play_width) // 2 - 2.5 * block_size
     if max_length == 2:
         sx += block_size / 2
-    print(sx)
     sy = s_height * 2 // 5
 
-    for i, line in enumerate(format):
+    for i, line in enumerate(shape.shape):
         row = list(line)
         for j, column in enumerate(row):
-            if column == '0':
+            if column == 'X':
                 pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
 
     #surface.blit(label, (sx + 15, sy))
@@ -339,7 +297,7 @@ def main():
     change_piece = False
     run = True
     current_piece = get_shape()
-    next_piece = get_shape()
+    next_piece = get_shape(current_piece)
     clock = pygame.time.Clock()
     fall_time = 0
     level_time = 0
@@ -426,7 +384,7 @@ def main():
                 p = (pos[0], pos[1])
                 locked_positions[p] = current_piece.color
             current_piece = next_piece
-            next_piece = get_shape()
+            next_piece = get_shape(current_piece)
             change_piece = False
 
             # call four times to check for multiple clear rows
@@ -444,7 +402,11 @@ def main():
         if check_lost(locked_positions):
             run = False
 
-    draw_text_middle("You Lost", 40, (255,255,255), win)
+    label = pygame.font.SysFont('couriernew', int(s_width / 20), bold=True)
+    prompt_text = label.render('YOU LOST!', True, (255, 255, 255))
+    prompt_rect = prompt_text.get_rect(center=(s_width - play_width // 2, s_height // 2))
+    win.blit(prompt_text, prompt_rect)
+    
     draw_score(win, score)  # Zeige den Endpunktestand an
     pygame.display.update()
     pygame.time.delay(2000)
@@ -556,7 +518,13 @@ def input_username():
         input_rect = input_text.get_rect(center=(s_width // 2, s_height // 2))
         win.blit(input_text, input_rect)
 
+        #button("Starten", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), main, 30)
+
+
         pygame.display.update()
+        
+        button("Starten", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), None, 30)
+
 
     return username
 
