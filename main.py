@@ -140,7 +140,7 @@ def valid_space(tetromino, grid):
     return True
 
 
-def check_lost(positionen):
+def überprüfe_verloren(positionen):
     for pos in positionen:
         x, y = pos
         if y < 1:
@@ -201,7 +201,7 @@ def reihen_leeren(grid, locked):
     return len(zu_leerende_reihen)
 
 
-def draw_next_shape(tetromino, surface):
+def draw_nächstes_tetromino(tetromino, surface):
     font = pygame.font.SysFont('couriernew', 30)
     #label = font.render('Nächste Form:', 100 , (0,0,0))
 
@@ -391,13 +391,13 @@ def main():
                 score += reihen_geleert * 1
 
         draw_window(win)
-        draw_next_shape(nächstes_tetromino, win)
+        draw_nächstes_tetromino(nächstes_tetromino, win)
         draw_score(win, score)  # Zeige den Punktestand an
         # draw_instruction(win)  # Zeige die Instruction an
         pygame.display.update()
 
         # Check if user lost
-        if check_lost(gesperrte_positionen):
+        if überprüfe_verloren(gesperrte_positionen):
             run = False
 
     label = pygame.font.SysFont('couriernew', int(screen_breite / 20), bold=True)
