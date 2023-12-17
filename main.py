@@ -17,7 +17,7 @@ pygame.font.init()
 
 # GLOBALS VARS
 VOLUME = 0.01
-s_width = 1000
+s_width = 600
 s_height = s_width
 play_width = s_width / 2  # meaning 300 // 10 = 30 width per block
 play_height = s_width  # meaning 600 // 20 = 20 height per blo ck
@@ -407,6 +407,7 @@ def main():
     prompt_rect = prompt_text.get_rect(center=(s_width - play_width // 2, s_height // 2))
     win.blit(prompt_text, prompt_rect)
     
+    save_score(user, score)
     draw_score(win, score)  # Zeige den Endpunktestand an
     pygame.display.update()
     pygame.time.delay(2000)
@@ -430,8 +431,8 @@ def main_menu():
         menu_rect = menu_text.get_rect(center=(s_width // 2, 100))
         win.blit(menu_text, menu_rect)
 
-        button("Neues Spiel", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), input_username, 30)
-        button("Scoreboard", s_width // 3, s_height // 2 + 100, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), None, 30)
+        button("Neues Spiel", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), input_username)
+        button("Scoreboard", s_width // 3, s_height // 2 + 100, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), display_scoreboard)
 
         pygame.display.update()
 
@@ -492,6 +493,7 @@ def text_objects(text, font):
 def input_username():
     run = True
     username = ""
+    global user
 
     while run:
         for event in pygame.event.get():
@@ -518,15 +520,70 @@ def input_username():
         input_rect = input_text.get_rect(center=(s_width // 2, s_height // 2))
         win.blit(input_text, input_rect)
 
-        #button("Starten", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), main, 30)
-
+        button("Start Game", s_width // 3, s_height * 2 // 3 + s_height // 8, s_width // 3, s_height // 15,
+               (0, 63, 115), (0, 0, 0), main)
+        button("Zurück", s_width // 3, s_height * 2 // 3 + s_height // 5, s_width // 3, s_height // 15,
+               (0, 63, 115), (0, 0, 0), main_menu)
+        
 
         pygame.display.update()
-        
-        button("Starten", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), None, 30)
-
+        user = username
 
     return username
+
+def save_score(username, score):
+    try:
+        scores = pickle.load(open('scores.pkl', 'rb'))
+    except (FileNotFoundError, EOFError):
+        scores = []
+
+    scores.append((username, score))
+    scores.sort(key=lambda x: x[1], reverse=True)  # Sort scores in descending order
+
+    with open('scores.pkl', 'wb') as file:
+        pickle.dump(scores, file)
+
+def load_top_scores():
+    try:
+        scores = pickle.load(open('scores.pkl', 'rb'))
+        return scores[:3]  # Return top 3 scores
+    except (FileNotFoundError, EOFError):
+        return []
+
+
+def display_scoreboard():
+    run = True
+
+    while run:
+        top_scores = load_top_scores()
+
+        win.fill((255, 255, 255))
+
+        font = pygame.font.SysFont('couriernew', 30)
+        title_text = font.render('Top 3 Scores', True, (0, 63, 115))
+        title_rect = title_text.get_rect(center=(s_width // 2, 50))
+        win.blit(title_text, title_rect)
+
+        for i, (username, score) in enumerate(top_scores):
+            score_text = font.render(f"{i + 1}. {username} : {score}", True, (0, 63, 115))
+            score_rect = score_text.get_rect(center=(s_width // 2, 100 + i * 50))
+            win.blit(score_text, score_rect)
+
+
+        button_width = s_width - play_width - 2 * (s_width // 30)
+        button_height = s_height // 15
+        button_x = (s_width - button_width) // 2
+        button_y = s_height - 3 * s_height // 15 - 3 * (s_width // 30)
+
+        button("Zurück", button_x, button_y, button_width, button_height, (0, 63, 115), (0, 0, 0), main_menu, s_width // 35)
+
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
+
 
 
 mixer.init()
