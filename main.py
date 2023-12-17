@@ -7,27 +7,25 @@ from pygame import mixer
 
 
 """
-10 x 20 square grid
-shapes: S, Z, I, O, J, L, T
-represented in order by 0 - 6
-Test
+10 x 20 Grid
+Formen / Blöcke: O, I, S, Z, L, J, T
 """
 
 pygame.font.init()
 
-# GLOBALS VARS
-VOLUME = 0.01
-s_width = 600
-s_height = s_width
-play_width = s_width / 2  # meaning 300 // 10 = 30 width per block
-play_height = s_width  # meaning 600 // 20 = 20 height per blo ck
-block_size = play_height / 20
+# Globale Variablen
+lautstärke = 0.01
+screen_breite = 600
+screen_höhe = screen_breite
+spiel_breite = screen_breite / 2  # meaning 300 // 10 = 30 width per block
+spiel_höhe = screen_breite  # meaning 600 // 20 = 20 height per blo ck
+block_größe = spiel_höhe / 20
 
-top_left_x = (s_width - play_width)
-top_left_y = s_height - play_height
+oben_links_x = screen_breite - spiel_breite
+oben_links_y = screen_höhe - spiel_höhe
 
 
-# SHAPE FORMATS
+# Tetrominos
 
 O = [
   ['-', '-', '-', '-', '-'],
@@ -85,65 +83,65 @@ T = [
   ['-', '-', '-', '-', '-']
 ]
 
-shapes = [O, I, S, Z, L, J, T]
-shape_colors = [(0, 110, 176), (255, 125, 0), (255, 201, 0), (48, 3, 156), (128, 207, 255), (255, 190, 128), (167, 130, 255)]
-# index 0 - 6 represent shape
-font = pygame.font.SysFont('couriernew', int(s_width / 20))
+tetrominos = [O, I, S, Z, L, J, T]
+tetromino_farben = [(0, 110, 176), (255, 125, 0), (255, 201, 0), (48, 3, 156), (128, 207, 255), (255, 190, 128), (167, 130, 255)]
+# index 0 - 6 repräsentiert die Tetrominos
+font = pygame.font.SysFont('couriernew', int(screen_breite / 20))
 
 class Piece(object):
 
-    def __init__(self, column, row, shape):
-        self.shape = shape
-        self.color = shape_colors[shapes.index(shape)]
-        self.rotation = 0  # number from 0-3
-        self.x = column
-        self.y = row
+    def __init__(self, spalte, reihe, tetromino):
+        self.shape = tetromino
+        self.color = tetromino_farben[tetrominos.index(tetromino)]
+        self.rotation = 0  # Nummer von 0 bis 3
+        self.x = spalte
+        self.y = reihe
 
 
-def create_grid(locked_positions={}):
+def erstelle_grid(gesperrte_positionen={}):
     grid = [[(30,30,30) for _ in range(10)] for _ in range(20)]
 
     for i in range(len(grid)): #jede Zeile durchgehen
         for j in range(len(grid[i])): #jede Spalte durchgehen
-            if (j,i) in locked_positions:
-                c = locked_positions[(j,i)]
+            if (j,i) in gesperrte_positionen:
+                c = gesperrte_positionen[(j,i)]
                 grid[i][j] = c
     return grid
 
-def convert_shape_format(shape):
-    positions = []
-    internal_positions = shape.shape
+def convertiere_tetromino_format(tetromino):
+    positionen = []
+    interne_positionen = tetromino.shape
 
-    if shape.shape != O:
-        for i in range(shape.rotation):
-            internal_positions = list(zip(*internal_positions))[::-1]
+    if tetromino.shape != O:
+        for i in range(tetromino.rotation):
+            interne_positionen = list(zip(*interne_positionen))[::-1]
 
-    for i, row in enumerate(internal_positions):
-        for j, column in enumerate(row):
-            if column == 'X':
-                positions.append((shape.x + j, shape.y + i))
+    for i, reihe in enumerate(interne_positionen):
+        for j, spalte in enumerate(reihe):
+            if spalte == 'X':
+                positionen.append((tetromino.x + j, tetromino.y + i))
 
-    for i, pos in enumerate(positions):
-        positions[i] = (pos[0] - 2, pos[1] - 4)
+    for i, pos in enumerate(positionen):
+        positionen[i] = (pos[0] - 2, pos[1] - 4)
 
-    return positions
+    return positionen
 
 
-def valid_space(shape, grid):
-    accepted_positions = [[(j, i) for j in range(10) if grid[i][j] == (30,30,30)] for i in range(20)]
-    accepted_positions = [j for sub in accepted_positions for j in sub]
-    formatted = convert_shape_format(shape)
+def valid_space(tetromino, grid):
+    akzeptierte_positionen = [[(j, i) for j in range(10) if grid[i][j] == (30,30,30)] for i in range(20)]
+    akzeptierte_positionen = [j for sub in akzeptierte_positionen for j in sub]
+    formatted = convertiere_tetromino_format(tetromino)
 
     for pos in formatted:
-        if pos not in accepted_positions:
+        if pos not in akzeptierte_positionen:
             if pos[1] > -1:
                 return False
 
     return True
 
 
-def check_lost(positions):
-    for pos in positions:
+def check_lost(positionen):
+    for pos in positionen:
         x, y = pos
         if y < 1:
             return True
@@ -151,89 +149,89 @@ def check_lost(positions):
 
 
 def get_shape(current = None):
-    global shapes, shape_colors
-    new_piece = Piece(5, 0, random.choice(shapes))
+    global tetrominos, tetromino_farben
+    new_piece = Piece(5, 0, random.choice(tetrominos))
     if current is not None:
         while current.shape == new_piece.shape:
-            new_piece = Piece(5, 0, random.choice(shapes))
+            new_piece = Piece(5, 0, random.choice(tetrominos))
 
     return new_piece
 
 
-def draw_text_middle(text, size, color, surface):
+def draw_text_mitte(text, size, color, surface):
     font = pygame.font.SysFont('couriernew', size, bold=True)
     label = font.render(text, 1, color)
 
-    surface.blit(label, (s_width / 2 - label.get_width() / 2 , s_height / 2 - label.get_height() / 2))
-#    surface.blit(label, (top_left_x + play_width/2 - (label.get_width() / 2), top_left_y + play_height/2 - label.get_height()/2))
+    surface.blit(label, (screen_breite / 2 - label.get_width() / 2 , screen_höhe / 2 - label.get_height() / 2))
+#    surface.blit(label, (oben_links_x + spiel_breite/2 - (label.get_width() / 2), oben_links_y + spiel_höhe/2 - label.get_height()/2))
 
 
-def draw_grid(surface, row, col):
-    sx = top_left_x
-    sy = top_left_y
-    for i in range(row):
-        pygame.draw.line(surface, (128,128,128), (sx, sy+ i*block_size), (sx + play_width, sy + i * block_size))  # horizontal lines
+def draw_grid(surface, reihe, col):
+    sx = oben_links_x
+    sy = oben_links_y
+    for i in range(reihe):
+        pygame.draw.line(surface, (128,128,128), (sx, sy+ i*block_größe), (sx + spiel_breite, sy + i * block_größe))  # horizontal lines
         for j in range(col):
-            pygame.draw.line(surface, (128,128,128), (sx + j * block_size, sy), (sx + j * block_size, sy + play_height))  # vertical lines
+            pygame.draw.line(surface, (128,128,128), (sx + j * block_größe, sy), (sx + j * block_größe, sy + spiel_höhe))  # vertical lines
 
 
-def clear_rows(grid, locked):
-    # need to see if row is clear the shift every other row above down one
-    rows_to_clear = []
+def reihen_leeren(grid, locked):
+    # need to see if reihe is clear the shift every other reihe above down one
+    zu_leerende_reihen = []
 
     for i in range(len(grid) - 1, -1, -1):
-        row = grid[i]
-        if (30, 30, 30) not in row:
-            rows_to_clear.append(i)
-            # add positions to remove from locked
+        reihe = grid[i]
+        if (30, 30, 30) not in reihe:
+            zu_leerende_reihen.append(i)
+            # Füge Positionen hinzu, die nicht mehr gesperrt werden sollen
             ind = i
-            for j in range(len(row)):
+            for j in range(len(reihe)):
                 try:
                     del locked[(j, i)]
                 except:
                     continue
 
-    if rows_to_clear:
+    if zu_leerende_reihen:
         for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
             x, y = key
-            if y < min(rows_to_clear):
-                new_key = (x, y + len(rows_to_clear))
+            if y < min(zu_leerende_reihen):
+                new_key = (x, y + len(zu_leerende_reihen))
                 locked[new_key] = locked.pop(key)
 
-    return len(rows_to_clear)
+    return len(zu_leerende_reihen)
 
 
-def draw_next_shape(shape, surface):
+def draw_next_shape(tetromino, surface):
     font = pygame.font.SysFont('couriernew', 30)
     #label = font.render('Nächste Form:', 100 , (0,0,0))
 
-    #form = shape.shape
-    #rotated = list(zip(*shape.shape))[::-1]
-    #format = shape.shape[shape.rotation % len(shape.shape)]
+    #form = tetromino.shape
+    #rotated = list(zip(*tetromino.shape))[::-1]
+    #format = tetromino.shape[tetromino.rotation % len(tetromino.shape)]
 
     first_idx = 2
     last_idx = 2
-    for i, line in enumerate(shape.shape):
-        for j, column in enumerate(line):
-            if column == 'X':
+    for i, line in enumerate(tetromino.shape):
+        for j, spalte in enumerate(line):
+            if spalte == 'X':
                 if first_idx > j:
                     first_idx = j
                 if last_idx < j:
                     last_idx = j
 
-                
-    max_length = last_idx - first_idx + 1
-            
-    sx = (s_width - play_width) // 2 - 2.5 * block_size
-    if max_length == 2:
-        sx += block_size / 2
-    sy = s_height * 2 // 5
 
-    for i, line in enumerate(shape.shape):
-        row = list(line)
-        for j, column in enumerate(row):
-            if column == 'X':
-                pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
+    max_length = last_idx - first_idx + 1
+
+    sx = (screen_breite - spiel_breite) // 2 - 2.5 * block_größe
+    if max_length == 2:
+        sx += block_größe / 2
+    sy = screen_höhe * 2 // 5
+
+    for i, line in enumerate(tetromino.shape):
+        reihe = list(line)
+        for j, spalte in enumerate(reihe):
+            if spalte == 'X':
+                pygame.draw.rect(surface, tetromino.color, (sx + j*block_größe, sy + i*block_größe, block_größe, block_größe), 0)
 
     #surface.blit(label, (sx + 15, sy))
 
@@ -242,37 +240,37 @@ def draw_window(surface):
     surface.fill((255,255,255))
 
     logo = pygame.image.load('logo_ba.jpg')  # Replace 'logo.jpg' with the actual filename of your logo image
-    logo = pygame.transform.scale(logo, (s_width - play_width - play_width/6, (s_width - play_width - play_width/6)/5))  # Adjust the size of the logo as needed
+    logo = pygame.transform.scale(logo, (screen_breite - spiel_breite - spiel_breite/6, (screen_breite - spiel_breite - spiel_breite/6)/5))  # Adjust the size of the logo as needed
 
     # Blit the logo and title
-    surface.blit(logo, (play_width/12, play_width/18))
+    surface.blit(logo, (spiel_breite/12, spiel_breite/18))
 
     # def button(text, x, y, width, height, inactive_color, active_color, action=None):
-    left_width = s_width - play_width
+    links_breite = screen_breite - spiel_breite
 
-    button("Neustart (n)", left_width // 30, s_height - 3 * s_height // 15 - 3 * left_width // 30, s_width - play_width - left_width // 15, s_height // 15, (0, 63, 115), (0, 0, 0), simulate_restart, s_width // 35)
-    button("Pause (p)", left_width // 30, s_height - 2 * s_height // 15 - 2 * left_width // 30, s_width - play_width - left_width // 15, s_height // 15, (0, 63, 115), (0, 0, 0), simulate_pause, s_width // 35)
-    button("Schließen (q)", left_width // 30, s_height - s_height // 15 - left_width // 30, s_width - play_width - left_width // 15, s_height // 15, (0, 63, 115), (0, 0, 0), simulate_quit, s_width // 35)
+    button("Neustart (n)", links_breite // 30, screen_höhe - 3 * screen_höhe // 15 - 3 * links_breite // 30, screen_breite - spiel_breite - links_breite // 15, screen_höhe // 15, (0, 63, 115), (0, 0, 0), simulate_restart, screen_breite // 35)
+    button("Pause (p)", links_breite // 30, screen_höhe - 2 * screen_höhe // 15 - 2 * links_breite // 30, screen_breite - spiel_breite - links_breite // 15, screen_höhe // 15, (0, 63, 115), (0, 0, 0), simulate_pause, screen_breite // 35)
+    button("Schließen (q)", links_breite // 30, screen_höhe - screen_höhe // 15 - links_breite // 30, screen_breite - spiel_breite - links_breite // 15, screen_höhe // 15, (0, 63, 115), (0, 0, 0), simulate_quit, screen_breite // 35)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            pygame.draw.rect(surface, grid[i][j], (top_left_x + j* block_size, top_left_y + i * block_size, block_size, block_size), 0)
+            pygame.draw.rect(surface, grid[i][j], (oben_links_x + j* block_größe, oben_links_y + i * block_größe, block_größe, block_größe), 0)
 
     # draw grid and border
     draw_grid(surface, 20, 10)
-    pygame.draw.rect(surface, (189, 199, 192), (top_left_x, top_left_y, play_width, play_height), int(play_width / 120))
+    pygame.draw.rect(surface, (189, 199, 192), (oben_links_x, oben_links_y, spiel_breite, spiel_höhe), int(spiel_breite / 120))
     # pygame.display.update()
 
 
 
 def draw_score(surface, score):
-    font = pygame.font.SysFont('couriernew', int(s_width / 10))
+    font = pygame.font.SysFont('couriernew', int(screen_breite / 10))
     label = font.render(str(score), 1, (255, 255, 255))
 
-    sx = (s_width - play_width) / 2 - label.get_width() / 2
-    sy = (s_height / 4) - label.get_height() // 2
+    sx = (screen_breite - spiel_breite) / 2 - label.get_width() / 2
+    sy = (screen_höhe / 4) - label.get_height() // 2
 
-    pygame.draw.circle(surface, (9, 59, 128), ((s_width - play_width) // 2, s_height / 4), s_width / 10)
+    pygame.draw.circle(surface, (9, 59, 128), ((screen_breite - spiel_breite) // 2, screen_höhe / 4), screen_breite / 10)
     surface.blit(label, (sx, sy))
 
 def draw_instruction(surface):
@@ -281,48 +279,48 @@ def draw_instruction(surface):
     label2 = font.render('q -> Spiel schließen', 1, (0,0,0))
     label3 = font.render('n -> Neues Spiel starten', 1, (0,0,0))
 
-    sx = top_left_x - 260
-    sy = top_left_y + 500
+    sx = oben_links_x - 260
+    sy = oben_links_y + 500
 
     surface.blit(label1, (sx, sy))
     surface.blit(label2, (sx, sy + 30))
     surface.blit(label3, (sx, sy + 60))
 
 def main():
-    global grid, VOLUME
+    global grid, lautstärke
 
-    locked_positions = {}  # (x,y):(255,0,0)
-    grid = create_grid(locked_positions)
+    gesperrte_positionen = {}  # (x,y):(255,0,0)
+    grid = erstelle_grid(gesperrte_positionen)
 
     change_piece = False
     run = True
-    current_piece = get_shape()
-    next_piece = get_shape(current_piece)
+    aktuelles_tetromino = get_shape()
+    nächstes_tetromino = get_shape(aktuelles_tetromino)
     clock = pygame.time.Clock()
-    fall_time = 0
-    level_time = 0
-    fall_speed = 0.27
+    Fallzeit = 0
+    Levelzeit = 0
+    Fallgeschwindigkeit = 0.27
     score = 0
 
     while run:
 
-        grid = create_grid(locked_positions)
-        fall_time += clock.get_rawtime()
-        level_time += clock.get_rawtime()
+        grid = erstelle_grid(gesperrte_positionen)
+        Fallzeit += clock.get_rawtime()
+        Levelzeit += clock.get_rawtime()
         clock.tick()
 
-        if level_time/1000 > 4: #maximal 4 Sekunden Spieldauer
-            level_time = 0 #ansonsten reset
-            if fall_speed > 0.15:
-                fall_speed -= 0.005
-            
+        if Levelzeit/1000 > 4: #maximal 4 Sekunden Spieldauer
+            Levelzeit = 0 #ansonsten reset
+            if Fallgeschwindigkeit > 0.15:
+                Fallgeschwindigkeit -= 0.005
+
 
         # PIECE FALLING CODE
-        if fall_time/1000 >= fall_speed:
-            fall_time = 0
-            current_piece.y += 1
-            if not (valid_space(current_piece, grid)) and current_piece.y > 0:
-                current_piece.y -= 1
+        if Fallzeit/1000 >= Fallgeschwindigkeit:
+            Fallzeit = 0
+            aktuelles_tetromino.y += 1
+            if not (valid_space(aktuelles_tetromino, grid)) and aktuelles_tetromino.y > 0:
+                aktuelles_tetromino.y -= 1
                 change_piece = True
 
         for event in pygame.event.get():
@@ -333,81 +331,81 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    current_piece.x -= 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.x += 1
+                    aktuelles_tetromino.x -= 1
+                    if not valid_space(aktuelles_tetromino, grid):
+                        aktuelles_tetromino.x += 1
 
                 elif event.key == pygame.K_RIGHT:
-                    current_piece.x += 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.x -= 1
+                    aktuelles_tetromino.x += 1
+                    if not valid_space(aktuelles_tetromino, grid):
+                        aktuelles_tetromino.x -= 1
                 elif event.key == pygame.K_UP:
                     # rotate shape
-                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                    aktuelles_tetromino.rotation = aktuelles_tetromino.rotation + 1 % len(aktuelles_tetromino.shape)
+                    if not valid_space(aktuelles_tetromino, grid):
+                        aktuelles_tetromino.rotation = aktuelles_tetromino.rotation - 1 % len(aktuelles_tetromino.shape)
 
                 if event.key == pygame.K_DOWN:
                     # move shape down
-                    current_piece.y += 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.y -= 1
+                    aktuelles_tetromino.y += 1
+                    if not valid_space(aktuelles_tetromino, grid):
+                        aktuelles_tetromino.y -= 1
 
                 '''if event.key == pygame.K_SPACE:
-                    while valid_space(current_piece, grid):
-                        current_piece.y += 1
-                    current_piece.y -= 1
-                    print(convert_shape_format(current_piece))'''  # todo fix
+                    while valid_space(aktuelles_tetromino, grid):
+                        aktuelles_tetromino.y += 1
+                    aktuelles_tetromino.y -= 1
+                    print(convertiere_tetromino_format(aktuelles_tetromino))'''  # todo fix
 
                 if event.key == pygame.K_p:
                     # Toggle pause state
                     mixer.music.set_volume(0)
-                    pause_menu(win)
-                    mixer.music.set_volume(VOLUME)
+                    pausenmenü(win)
+                    mixer.music.set_volume(lautstärke)
                     #mixer.music.play
                 elif event.key == pygame.K_n:
-                    main_menu()
+                    hauptmenü()
                 elif event.key == pygame.K_q:
                     quit()
 
-        shape_pos = convert_shape_format(current_piece)
+        shape_pos = convertiere_tetromino_format(aktuelles_tetromino)
 
         # add piece to the grid for drawing
         for i in range(len(shape_pos)):
             x, y = shape_pos[i]
             if y > -1:
-                grid[y][x] = current_piece.color
+                grid[y][x] = aktuelles_tetromino.color
 
-        # IF PIECE HIT GROUND
+        # Wenn das Tetromino den Grund berührt
         if change_piece:
             for pos in shape_pos:
                 p = (pos[0], pos[1])
-                locked_positions[p] = current_piece.color
-            current_piece = next_piece
-            next_piece = get_shape(current_piece)
+                gesperrte_positionen[p] = aktuelles_tetromino.color
+            aktuelles_tetromino = nächstes_tetromino
+            nächstes_tetromino = get_shape(aktuelles_tetromino)
             change_piece = False
 
-            # call four times to check for multiple clear rows
-            rows_cleared = clear_rows(grid, locked_positions)
-            if rows_cleared > 0:
-                score += rows_cleared * 1
+            # call four times to check for multiple clear reihes
+            reihen_geleert = reihen_leeren(grid, gesperrte_positionen)
+            if reihen_geleert > 0:
+                score += reihen_geleert * 1
 
         draw_window(win)
-        draw_next_shape(next_piece, win)
+        draw_next_shape(nächstes_tetromino, win)
         draw_score(win, score)  # Zeige den Punktestand an
         # draw_instruction(win)  # Zeige die Instruction an
         pygame.display.update()
 
         # Check if user lost
-        if check_lost(locked_positions):
+        if check_lost(gesperrte_positionen):
             run = False
 
-    label = pygame.font.SysFont('couriernew', int(s_width / 20), bold=True)
-    prompt_text = label.render('YOU LOST!', True, (255, 255, 255))
-    prompt_rect = prompt_text.get_rect(center=(s_width - play_width // 2, s_height // 2))
+    label = pygame.font.SysFont('couriernew', int(screen_breite / 20), bold=True)
+    prompt_text = label.render('Verloren!', True, (255, 255, 255))
+    prompt_rect = prompt_text.get_rect(center=(screen_breite - spiel_breite // 2, screen_höhe // 2))
     win.blit(prompt_text, prompt_rect)
-    
-    save_score(user, score)
+
+    speichere_score(user, score)
     draw_score(win, score)  # Zeige den Endpunktestand an
     pygame.display.update()
     pygame.time.delay(2000)
@@ -416,23 +414,23 @@ def quit():
     pygame.quit()
     sys.exit()
 
-def main_menu():
+def hauptmenü():
     run = True
 
     while run:
         win.fill((255, 255, 255))
 
         font = pygame.font.SysFont('couriernew', 30)
-        title_text = font.render('Willkommen bei Tetris', True, (0, 63, 115))
-        title_rect = title_text.get_rect(center=(s_width // 2, 50))
-        win.blit(title_text, title_rect)
+        titel_text = font.render('Willkommen bei Tetris', True, (0, 63, 115))
+        title_rect = titel_text.get_rect(center=(screen_breite // 2, 50))
+        win.blit(titel_text, title_rect)
 
         menu_text = font.render('Menü', True, (0, 63, 115))
-        menu_rect = menu_text.get_rect(center=(s_width // 2, 100))
+        menu_rect = menu_text.get_rect(center=(screen_breite // 2, 100))
         win.blit(menu_text, menu_rect)
 
-        button("Neues Spiel", s_width // 3, s_height // 2, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), input_username)
-        button("Scoreboard", s_width // 3, s_height // 2 + 100, s_width // 3, s_height // 15, (0, 63, 115), (0, 0, 0), display_scoreboard)
+        button("Neues Spiel", screen_breite // 3, screen_höhe // 2, screen_breite // 3, screen_höhe // 15, (0, 63, 115), (0, 0, 0), input_username)
+        button("Scoreboard", screen_breite // 3, screen_höhe // 2 + 100, screen_breite // 3, screen_höhe // 15, (0, 63, 115), (0, 0, 0), display_scoreboard)
 
         pygame.display.update()
 
@@ -441,7 +439,7 @@ def main_menu():
                 run = False
     pygame.quit()
 
-def pause_menu(surface):
+def pausenmenü(surface):
     paused = True
     while paused:
         for event in pygame.event.get():
@@ -449,11 +447,11 @@ def pause_menu(surface):
                 if event.key == pygame.K_p:
                     # Resume the game
                     return
-        
-        pygame.draw.rect(surface, (30, 30, 30), (s_width - play_width + play_width / 240, s_height - play_height + play_width / 240, play_width - 2 * play_width / 240, play_height - 2 * play_width / 240), 0)
-        
-        #draw_text_middle('Paused', 60, (255, 255, 255), win)
-        button("Fortsetzen", s_width - play_width // 2 - play_width // 4, s_height // 2 - play_height // 40, play_width // 2, play_height // 20, (0, 63, 115), (26, 99, 201), simulate_pause, int(play_width // 20))
+
+        pygame.draw.rect(surface, (30, 30, 30), (screen_breite - spiel_breite + spiel_breite / 240, screen_höhe - spiel_höhe + spiel_breite / 240, spiel_breite - 2 * spiel_breite / 240, spiel_höhe - 2 * spiel_breite / 240), 0)
+
+        #draw_text_mitte('Paused', 60, (255, 255, 255), win)
+        button("Fortsetzen", screen_breite - spiel_breite // 2 - spiel_breite // 4, screen_höhe // 2 - spiel_höhe // 40, spiel_breite // 2, spiel_höhe // 20, (0, 63, 115), (26, 99, 201), simulate_pause, int(spiel_breite // 20))
         pygame.display.update()
 
 
@@ -469,27 +467,27 @@ def simulate_restart():
     newevent = pygame.event.Event(pygame.KEYDOWN, unicode="n", key=pygame.K_n, mod=pygame.KMOD_NONE) #create the event
     pygame.event.post(newevent)
 
-def button(text, x, y, width, height, inactive_color, active_color, action=None, fontsize = 20):
+def button(text, x, y, breite, höhe, inactive_color, active_color, action=None, fontsize = 20):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
 
-    if x < mouse[0] < x + width and y < mouse[1] < y + height:
-        pygame.draw.rect(win, active_color, (x, y, width, height))
+    if x < mouse[0] < x + breite and y < mouse[1] < y + höhe:
+        pygame.draw.rect(win, active_color, (x, y, breite, höhe))
 
         if click[0] == 1 and action is not None:
             action()
     else:
-        pygame.draw.rect(win, inactive_color, (x, y, width, height))
+        pygame.draw.rect(win, inactive_color, (x, y, breite, höhe))
 
     small_text = pygame.font.SysFont('couriernew', fontsize)
-    text_surf, text_rect = text_objects(text, small_text)
-    text_rect.center = (x + width / 2, y + height / 2)
+    text_surf, text_rect = text_objekte(text, small_text)
+    text_rect.center = (x + breite / 2, y + höhe / 2)
     win.blit(text_surf, text_rect)
 
-def text_objects(text, font):
+def text_objekte(text, font):
     text_surface = font.render(text, True, (255, 255, 255))
     return text_surface, text_surface.get_rect()
- 
+
 def input_username():
     run = True
     username = ""
@@ -511,27 +509,27 @@ def input_username():
         win.fill((255, 255, 255))
 
         # Display text in the center of the window
-        label = pygame.font.SysFont('couriernew', int(s_width / 20), bold=True)
+        label = pygame.font.SysFont('couriernew', int(screen_breite / 20), bold=True)
         prompt_text = label.render('Enter Your Username:', True, (0, 63, 115))
-        prompt_rect = prompt_text.get_rect(center=(s_width // 2, s_height // 2 - 50))
+        prompt_rect = prompt_text.get_rect(center=(screen_breite // 2, screen_höhe // 2 - 50))
         win.blit(prompt_text, prompt_rect)
 
         input_text = font.render(username, True, (0, 63, 115))
-        input_rect = input_text.get_rect(center=(s_width // 2, s_height // 2))
+        input_rect = input_text.get_rect(center=(screen_breite // 2, screen_höhe // 2))
         win.blit(input_text, input_rect)
 
-        button("Start Game", s_width // 3, s_height * 2 // 3 + s_height // 8, s_width // 3, s_height // 15,
+        button("Start Game", screen_breite // 3, screen_höhe * 2 // 3 + screen_höhe // 8, screen_breite // 3, screen_höhe // 15,
                (0, 63, 115), (0, 0, 0), main)
-        button("Zurück", s_width // 3, s_height * 2 // 3 + s_height // 5, s_width // 3, s_height // 15,
-               (0, 63, 115), (0, 0, 0), main_menu)
-        
+        button("Zurück", screen_breite // 3, screen_höhe * 2 // 3 + screen_höhe // 5, screen_breite // 3, screen_höhe // 15,
+               (0, 63, 115), (0, 0, 0), hauptmenü)
+
 
         pygame.display.update()
         user = username
 
     return username
 
-def save_score(username, score):
+def speichere_score(username, score):
     try:
         scores = pickle.load(open('scores.pkl', 'rb'))
     except (FileNotFoundError, EOFError):
@@ -543,7 +541,7 @@ def save_score(username, score):
     with open('scores.pkl', 'wb') as file:
         pickle.dump(scores, file)
 
-def load_top_scores():
+def lade_top_scores():
     try:
         scores = pickle.load(open('scores.pkl', 'rb'))
         return scores[:3]  # Return top 3 scores
@@ -555,27 +553,27 @@ def display_scoreboard():
     run = True
 
     while run:
-        top_scores = load_top_scores()
+        top_scores = lade_top_scores()
 
         win.fill((255, 255, 255))
 
         font = pygame.font.SysFont('couriernew', 30)
-        title_text = font.render('Top 3 Scores', True, (0, 63, 115))
-        title_rect = title_text.get_rect(center=(s_width // 2, 50))
-        win.blit(title_text, title_rect)
+        titel_text = font.render('Top 3 Scores', True, (0, 63, 115))
+        title_rect = titel_text.get_rect(center=(screen_breite // 2, 50))
+        win.blit(titel_text, title_rect)
 
         for i, (username, score) in enumerate(top_scores):
             score_text = font.render(f"{i + 1}. {username} : {score}", True, (0, 63, 115))
-            score_rect = score_text.get_rect(center=(s_width // 2, 100 + i * 50))
+            score_rect = score_text.get_rect(center=(screen_breite // 2, 100 + i * 50))
             win.blit(score_text, score_rect)
 
 
-        button_width = s_width - play_width - 2 * (s_width // 30)
-        button_height = s_height // 15
-        button_x = (s_width - button_width) // 2
-        button_y = s_height - 3 * s_height // 15 - 3 * (s_width // 30)
+        button_breite = screen_breite - spiel_breite - 2 * (screen_breite // 30)
+        button_höhe = screen_höhe // 15
+        button_x = (screen_breite - button_breite) // 2
+        button_y = screen_höhe - 3 * screen_höhe // 15 - 3 * (screen_breite // 30)
 
-        button("Zurück", button_x, button_y, button_width, button_height, (0, 63, 115), (0, 0, 0), main_menu, s_width // 35)
+        button("Zurück", button_x, button_y, button_breite, button_höhe, (0, 63, 115), (0, 0, 0), hauptmenü, screen_breite // 35)
 
         pygame.display.update()
         for event in pygame.event.get():
@@ -588,12 +586,12 @@ def display_scoreboard():
 
 mixer.init()
 mixer.music.load('Soundtrack.mp3')
-mixer.music.set_volume(VOLUME)
+mixer.music.set_volume(lautstärke)
 mixer.music.play(100)
-win = pygame.display.set_mode((s_width, s_height))
+win = pygame.display.set_mode((screen_breite, screen_höhe))
 pygame.display.set_caption('Tetris Game')
 
-main_menu()  # start game
+hauptmenü()  # start game
 
 
 
