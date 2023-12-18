@@ -9,7 +9,7 @@ pygame.font.init() #initialisiert das Schriftmodul in pygame
 
 # Globale Variablen
 lautstärke = 0.01
-screen_breite = 600
+screen_breite = 1200
 screen_höhe = screen_breite
 spiel_breite = screen_breite / 2
 spiel_höhe = screen_breite
@@ -247,7 +247,6 @@ def main():
     hauptmenü()
 
     while run:
-        war_in_menü = False
         grid = erstelle_grid(gesperrte_positionen)
         Fallzeit += uhr.get_rawtime()
         uhr.tick()
@@ -270,7 +269,6 @@ def main():
                     pausenmenü(win)
                     mixer.music.set_volume(lautstärke)
             elif event.type == MENÜ_eventtype:
-                war_in_menü = True
                 hauptmenü()
 
             if event.type == pygame.KEYDOWN:
@@ -293,7 +291,6 @@ def main():
                     if not platz_gültig(aktuelles_tetromino, grid):
                         aktuelles_tetromino.y -= 1
 
-        #if war_in_menü == False:
         tetromino_position = convertiere_tetromino_format(aktuelles_tetromino)
 
         # add piece to the grid for drawing
@@ -358,7 +355,6 @@ def hauptmenü():
     benutzername = benutzer
 
 
-    #while run:
     win.fill((255, 255, 255))
     menü_text = überschrift.render('Tetris', True, (0, 63, 115))
     menü_rect = menü_text.get_rect(center=(screen_breite // 2, screen_höhe // 8))
@@ -468,7 +464,7 @@ def lade_top_scores(): #Gibt die besten 3 Scores zurück
 
 
 mixer.init()
-mixer.music.load('Soundtrack.mp3') #Läd die Hintergrundmusik
+mixer.music.load('Soundtrack.mp3') #Lädt die Hintergrundmusik
 mixer.music.set_volume(lautstärke) #Setzt die Lautstärke der Musik fest
 mixer.music.play(100)
 win = pygame.display.set_mode((screen_breite, screen_höhe))
@@ -480,8 +476,3 @@ benutzer = "anonym"
 main()
 
 #hauptmenü()
-
-
-
-
-
